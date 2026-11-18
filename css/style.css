@@ -219,7 +219,7 @@ select {
             rgba(8, 30, 25, 0.55),
             rgba(8, 30, 25, 0.12)
         ),
-        url('/images/hero.avif')
+        url('../images/hero.avif')
         center/cover no-repeat;
 }
 
@@ -482,7 +482,7 @@ select {
     color: var(--white);
     background:
         linear-gradient(rgba(11, 41, 35, 0.91), rgba(11, 41, 35, 0.91)),
-        url('/images/consultation.avif')
+        url('../images/consultation.avif')
         center/cover;
 }
 
