@@ -710,7 +710,7 @@ select {
     color: var(--white);
     background:
         linear-gradient(rgba(11, 41, 35, 0.88), rgba(11, 41, 35, 0.88)),
-        url('/images/consultation.avif')
+        url('../images/consultation.avif')
         center/cover no-repeat;
 }
 
