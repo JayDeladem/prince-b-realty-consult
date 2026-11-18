@@ -1542,7 +1542,7 @@ select {
 .gallery-hero {
     background:
         linear-gradient(rgba(37, 42, 51, 0.88), rgba(37, 42, 51, 0.82)),
-        url("/images/consultation.avif")
+        url("../images/consultation.avif")
         center/cover no-repeat;
 
     padding: 90px 0;
