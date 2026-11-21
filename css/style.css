@@ -1487,7 +1487,7 @@ select {
 
 .whatsapp-float {
     position: fixed;
-    bottom: 25px;
+    bottom: 50px;
     right: 25px;
     z-index: 9999;
 
@@ -1498,12 +1498,12 @@ select {
     background-color: #25D366;
     color: #ffffff;
 
-    padding: 12px 18px;
+    padding: 8px 8px;
     border-radius: 50px;
 
-    text-decoration: none;
+    /* text-decoration: none;
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 600; */
 
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     transition: 0.3s ease;
@@ -1522,13 +1522,13 @@ select {
 /* Mobile responsiveness */
 @media (max-width: 480px) {
     .whatsapp-float {
-        bottom: 18px;
-        right: 15px;
-        padding: 11px;
+        bottom: 55px;
+        right: 12px;
+        padding: 4px;
     }
 
     .whatsapp-float span {
-        font-size: 13px;
+        font-size: 2px;
     }
 }
 
