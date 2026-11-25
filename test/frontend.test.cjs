@@ -18,7 +18,13 @@ async function wait(check){for(let i=0;i<200;i++){if(check())return;await new Pr
 async function page(file,state,query=''){
  const dom=new JSDOM(fs.readFileSync(path.join(root,file),'utf8'),{url:prefix+file+query,runScripts:'outside-only'}),w=dom.window,redirects=[];
  if(state.welcomed)w.localStorage.setItem('princeb-prinbot-welcomed','1');
- w.AbortSignal=AbortSignal;w.HTMLElement.prototype.scrollIntoView=function(){};w.requestAnimationFrame=fn=>{fn();return 1;};w.confirm=()=>true;
+ if(state.viewport){
+  Object.defineProperty(w,'innerWidth',{value:state.viewport.width,writable:true});
+  Object.defineProperty(w,'innerHeight',{value:state.viewport.height,writable:true});
+  const viewport=Object.assign(new w.EventTarget(),state.viewport);
+  Object.defineProperty(w,'visualViewport',{value:viewport,configurable:true});
+ }
+ w.AbortSignal=AbortSignal;w.HTMLElement.prototype.scrollIntoView=function(){};w.requestAnimationFrame=fn=>{fn();return 1;};w.cancelAnimationFrame=()=>{};w.confirm=()=>true;
  w.fetch=async(url,options={})=>{
   state.calls.push({url:String(url),options});
   const answer=(status,body)=>({ok:status>=200&&status<300,status,json:async()=>clone(body)});
@@ -68,6 +74,60 @@ async function page(file,state,query=''){
  return {dom,w,doc:w.document,redirects};
 }
 function submit(p,form,button=form.querySelector('button[type=submit]')){form.dispatchEvent(new p.w.SubmitEvent('submit',{bubbles:true,cancelable:true,submitter:button}));}
+
+test('mobile visual viewport follows the keyboard, preserves older history and restores normal size',async()=>{
+ const p=await page('index.html',{...fixture(),viewport:{width:320,height:700,offsetTop:0,scale:1}});
+ const panel=p.doc.querySelector('.property-chat'),history=p.doc.querySelector('.chat-messages');
+ const input=p.doc.querySelector('.chat-composer input'),viewport=p.w.visualViewport;
+ let historyHeight=300;
+ Object.defineProperty(history,'scrollHeight',{get:()=>1200});
+ Object.defineProperty(history,'clientHeight',{get:()=>historyHeight});
+ p.doc.querySelector('.chat-launcher').click();
+ assert.equal(panel.style.getPropertyValue('--chat-mobile-height'),'588px');
+ history.scrollTop=900;history.dispatchEvent(new p.w.Event('scroll'));
+ input.focus();historyHeight=180;viewport.height=340;viewport.offsetTop=30;
+ viewport.dispatchEvent(new p.w.Event('resize'));
+ assert(panel.classList.contains('chat-keyboard-open'));
+ assert.equal(panel.style.getPropertyValue('--chat-mobile-height'),'324px');
+ assert.equal(panel.style.getPropertyValue('--chat-mobile-top'),'38px');
+ assert.equal(history.scrollTop,1200); // Real layout clamps this to the new bottom.
+ history.scrollTop=300;history.dispatchEvent(new p.w.Event('scroll'));
+ viewport.height=320;viewport.offsetTop=45;viewport.dispatchEvent(new p.w.Event('resize'));
+ assert.equal(history.scrollTop,300);
+ viewport.offsetTop=50;viewport.dispatchEvent(new p.w.Event('scroll'));
+ assert.equal(history.scrollTop,300);
+ input.value='Hello';
+ const tap=new p.w.Event('pointerdown',{bubbles:true,cancelable:true});
+ p.doc.querySelector('.chat-send').dispatchEvent(tap);assert(tap.defaultPrevented);
+ submit(p,p.doc.querySelector('.chat-form'));
+ await wait(()=>p.doc.querySelector('.chat-messages').textContent.includes('PrinBot still connected'));
+ assert(panel.classList.contains('chat-keyboard-open'));
+ assert.equal(p.doc.querySelector('.chat-question').textContent,'Hello');
+ assert.equal(p.doc.querySelector('.chat-send').disabled,false);
+ assert.equal(p.doc.activeElement,input);
+ history.scrollTop=300;history.dispatchEvent(new p.w.Event('scroll'));
+ historyHeight=400;viewport.height=700;viewport.offsetTop=0;viewport.dispatchEvent(new p.w.Event('resize'));
+ assert(!panel.classList.contains('chat-keyboard-open'));
+ assert.equal(panel.style.getPropertyValue('--chat-mobile-height'),'588px');
+ assert.equal(history.scrollTop,300);
+ p.dom.window.close();
+});
+
+test('mobile fallback tracks a resized window without visualViewport and ignores pinch zoom as a keyboard',async()=>{
+ const p=await page('index.html',{...fixture(),viewport:{width:360,height:740,offsetTop:0,scale:1}});
+ const panel=p.doc.querySelector('.property-chat'),viewport=p.w.visualViewport;
+ p.doc.querySelector('.chat-launcher').click();
+ viewport.scale=2;viewport.height=370;viewport.dispatchEvent(new p.w.Event('resize'));
+ assert(!panel.classList.contains('chat-keyboard-open'));
+ viewport.scale=1;viewport.height=740;viewport.dispatchEvent(new p.w.Event('resize'));
+ Object.defineProperty(p.w,'visualViewport',{value:null});
+ p.w.innerHeight=350;p.w.dispatchEvent(new p.w.Event('resize'));
+ assert(panel.classList.contains('chat-keyboard-open'));
+ assert.equal(panel.style.getPropertyValue('--chat-mobile-height'),'334px');
+ p.w.innerHeight=740;p.w.dispatchEvent(new p.w.Event('resize'));
+ assert(!panel.classList.contains('chat-keyboard-open'));
+ p.dom.window.close();
+});
 
 test('launcher welcomes first-time visitors, supports dismissal and stays quiet on return visits',async()=>{
  const p=await page('index.html',fixture());
