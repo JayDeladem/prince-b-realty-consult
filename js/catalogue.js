@@ -84,6 +84,10 @@ const form = element('form', 'chat-form');
 const composer = element('div', 'chat-composer');
 const input = element('input'); input.placeholder = 'Ask about a property…'; input.maxLength = 1200; input.required = true; input.setAttribute('aria-label','Your property question'); input.autocomplete = 'off';
 const send = iconButton('chat-send', 'Send message', '➤'); send.type = 'submit';
+// Keep the software keyboard open on touch submission; keyboard activation is unchanged.
+send.addEventListener('pointerdown', event => {
+    if (window.innerWidth <= 600 && document.activeElement === input) event.preventDefault();
+});
 composer.append(input, send); form.append(composer, element('p', 'chat-note', 'Here to help you find your place.'));
 panel.append(header, messages, form);
 const welcome = element('div', 'chat-launcher-welcome'); welcome.hidden = true;
@@ -99,20 +103,54 @@ try {
 } catch (_) { welcome.hidden = false; }
 welcomeOpen.addEventListener('click', () => toggleChat(true));
 welcomeClose.addEventListener('click', () => { welcome.hidden = true; launcher.focus({preventScroll:true}); });
-function keepLatestVisible() { messages.scrollTop = messages.scrollHeight; }
+// Remember the reader's intent before a keyboard resize changes the scroll range.
+let followLatest = true, historyTop = 0;
+let restingViewportHeight = window.visualViewport?.height || window.innerHeight;
+let restingViewportWidth = window.visualViewport?.width || window.innerWidth;
+let viewportFrame = 0;
+function keepLatestVisible() {
+    followLatest = true;
+    messages.scrollTop = messages.scrollHeight;
+    historyTop = messages.scrollTop;
+}
+messages.addEventListener('scroll', () => {
+    historyTop = messages.scrollTop;
+    followLatest = messages.scrollHeight - messages.clientHeight - historyTop <= 24;
+}, {passive:true});
 function syncViewport() {
     const viewport = window.visualViewport;
-    panel.style.setProperty('--chat-viewport-height', `${viewport ? viewport.height : window.innerHeight}px`);
-    panel.style.setProperty('--chat-viewport-top', `${viewport ? viewport.offsetTop : 0}px`);
-    const height = viewport ? viewport.height : window.innerHeight;
-    const panelHeight = Math.min(520, height * .72);
+    const height = viewport?.height || window.innerHeight;
+    const width = viewport?.width || window.innerWidth;
+    const top = viewport?.offsetTop || 0;
+    const mobile = window.innerWidth <= 600;
+    if (Math.abs(width - restingViewportWidth) > 80) {
+        restingViewportHeight = height; restingViewportWidth = width;
+    }
+    const keyboardOpen = mobile && (viewport?.scale || 1) < 1.05 &&
+        Math.max(restingViewportHeight, window.innerHeight) - height > 120;
+    if (!keyboardOpen) restingViewportHeight = height;
+    panel.classList.toggle('chat-keyboard-open', keyboardOpen);
+    // Use almost all visible height above the keyboard; retain page space otherwise.
+    const gap = keyboardOpen ? 8 : 12;
+    const panelHeight = keyboardOpen ? Math.max(0, height - gap * 2) : Math.min(620, height * .84, height - gap * 2);
     panel.style.setProperty('--chat-mobile-height', `${panelHeight}px`);
-    panel.style.setProperty('--chat-mobile-top', `${(viewport ? viewport.offsetTop : 0) + height - panelHeight - 16}px`);
-    if (!panel.hidden) keepLatestVisible();
+    panel.style.setProperty('--chat-mobile-top', `${top + height - panelHeight - gap}px`);
+    if (!mobile || panel.hidden) return;
+    const stickToBottom = followLatest, savedTop = historyTop;
+    const restoreHistory = () => {
+        messages.scrollTop = stickToBottom ? messages.scrollHeight : savedTop;
+        historyTop = messages.scrollTop;
+        followLatest = stickToBottom;
+    };
+    restoreHistory();
+    cancelAnimationFrame(viewportFrame);
+    viewportFrame = requestAnimationFrame(restoreHistory);
 }
 window.visualViewport?.addEventListener('resize', syncViewport);
 window.visualViewport?.addEventListener('scroll', syncViewport);
 window.addEventListener('resize', syncViewport);
+input.addEventListener('focus', syncViewport);
+input.addEventListener('blur', syncViewport);
 function toggleChat(open) {
     if (open) welcome.hidden = true;
     panel.hidden = !open; launcher.setAttribute('aria-expanded', String(open));
@@ -152,6 +190,7 @@ async function sendMessage(message, retryBubble = null) {
         if(!response.ok) throw new Error('Service unavailable');
         const data = await response.json();
         if(typeof data.reply !== 'string' || !Array.isArray(data.listings)) throw new Error('Invalid response');
+        const stickToReply = followLatest;
         pending.textContent = data.reply;
         if(data.demo === true && data.listings.length > 0) pending.append(element('p','chat-demo','Demo catalogue — please confirm details with our team.'));
         data.listings.forEach(p => {
@@ -166,6 +205,7 @@ async function sendMessage(message, retryBubble = null) {
             else if(data.intent === 'search_property') previousQuery = /^(and|what about|how about|only)\b/i.test(message) && previousQuery ? previousQuery+'; '+message : message;
             if(data.listings.length) previousIds = data.listings.map(p=>p.id).slice(0,3);
         }
+        if (stickToReply) keepLatestVisible();
     } catch (_) {
         pending.textContent = 'PrinBot couldn’t connect just now. Please try again, or contact our team.';
         const retry = element('button','chat-retry','Try again'); retry.type = 'button';
@@ -173,7 +213,7 @@ async function sendMessage(message, retryBubble = null) {
     } finally {
         pending.classList.remove('chat-loading'); busy = false; send.disabled = false; form.setAttribute('aria-busy','false');
         if(!panel.hidden && (document.activeElement === send || document.activeElement === document.body)) input.focus({preventScroll:true});
-        keepLatestVisible();
+        if (followLatest) keepLatestVisible();
     }
 }
 form.addEventListener('submit', event => { event.preventDefault(); sendMessage(input.value); });
