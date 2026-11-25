@@ -17,6 +17,7 @@ function fixture(){
 async function wait(check){for(let i=0;i<200;i++){if(check())return;await new Promise(resolve=>setTimeout(resolve,5));}throw new Error('UI state did not settle');}
 async function page(file,state,query=''){
  const dom=new JSDOM(fs.readFileSync(path.join(root,file),'utf8'),{url:prefix+file+query,runScripts:'outside-only'}),w=dom.window,redirects=[];
+ if(state.welcomed)w.localStorage.setItem('princeb-prinbot-welcomed','1');
  w.AbortSignal=AbortSignal;w.HTMLElement.prototype.scrollIntoView=function(){};w.requestAnimationFrame=fn=>{fn();return 1;};w.confirm=()=>true;
  w.fetch=async(url,options={})=>{
   state.calls.push({url:String(url),options});
@@ -67,6 +68,38 @@ async function page(file,state,query=''){
  return {dom,w,doc:w.document,redirects};
 }
 function submit(p,form,button=form.querySelector('button[type=submit]')){form.dispatchEvent(new p.w.SubmitEvent('submit',{bubbles:true,cancelable:true,submitter:button}));}
+
+test('launcher welcomes first-time visitors, supports dismissal and stays quiet on return visits',async()=>{
+ const p=await page('index.html',fixture());
+ assert.equal(p.doc.querySelector('.chat-launcher-welcome').hidden,false);
+ assert.equal(p.w.localStorage.getItem('princeb-prinbot-welcomed'),'1');
+ p.doc.querySelector('.chat-welcome-open').click();
+ assert.equal(p.doc.querySelector('.property-chat').hidden,false);
+ assert.equal(p.doc.querySelectorAll('.chat-portraits img').length,3);
+ for(const image of p.doc.querySelectorAll('.chat-portraits img')){
+  assert.equal(image.alt,'');
+  assert(fs.existsSync(path.join(root,new URL(image.src).pathname.slice('/prince-b-realty-consult/'.length))));
+ }
+ const pause=p.doc.querySelector('.chat-slideshow-toggle');pause.click();
+ assert.equal(pause.getAttribute('aria-pressed'),'true');
+ assert(p.doc.querySelector('.chat-header').classList.contains('chat-slideshow-paused'));
+ pause.click();assert.equal(pause.getAttribute('aria-pressed'),'false');
+ assert.equal(p.doc.querySelector('.chat-launcher-welcome').hidden,true);
+ p.doc.querySelector('.chat-close').click();
+ assert.equal(p.doc.querySelector('.property-chat').hidden,true);
+ assert.equal(p.doc.activeElement,p.doc.querySelector('.chat-launcher'));
+ p.dom.window.close();
+ const returning=await page('properties.html',{...fixture(),welcomed:true});
+ await wait(()=>returning.doc.querySelectorAll('.property-item').length===3);
+ assert.equal(returning.doc.querySelector('.chat-launcher-welcome').hidden,true);
+ assert.equal(returning.doc.querySelector('.chat-starter'),null);
+ returning.dom.window.close();
+ const dismiss=await page('index.html',fixture());
+ dismiss.doc.querySelector('.chat-welcome-close').click();
+ assert.equal(dismiss.doc.querySelector('.chat-launcher-welcome').hidden,true);
+ assert.equal(dismiss.doc.querySelector('.property-chat').hidden,true);
+ dismiss.dom.window.close();
+});
 test('admin HTML and every local asset resolve under the GitHub Pages project path',()=>{
  for(const file of ['admin/index.html','admin/login.html']){
   const dom=new JSDOM(fs.readFileSync(path.join(root,file),'utf8'),{url:prefix+file});
@@ -82,7 +115,7 @@ test('public properties, filters, details, gallery, FAQ preview and PrinBot keep
  const state=fixture(),p=await page('properties.html',state);await wait(()=>p.doc.querySelectorAll('.property-item').length===3);
  const search=p.doc.querySelector('#property-search');search.value='East Legon';search.dispatchEvent(new p.w.Event('input'));assert.equal(Array.from(p.doc.querySelectorAll('.property-item')).filter(card=>card.style.display!=='none').length,1);
  assert(p.doc.querySelector('.property-info a').href.startsWith(prefix+'property-details.html?id='));
- p.doc.querySelector('.chat-launcher').click();p.doc.querySelector('.chat-starter').click();await wait(()=>p.doc.querySelector('.chat-messages').textContent.includes('PrinBot still connected'));p.dom.window.close();
+ p.doc.querySelector('.chat-launcher').click();assert.equal(p.doc.querySelector('.chat-starter'),null);p.doc.querySelector('.chat-composer input').value='Show me houses for sale';submit(p,p.doc.querySelector('.chat-form'));await wait(()=>p.doc.querySelector('.chat-messages').textContent.includes('PrinBot still connected'));p.dom.window.close();
  const detail=await page('property-details.html',state,'?id=house-1');await wait(()=>!detail.doc.querySelector('#property-details-content').hidden);assert.equal(detail.doc.querySelector('#detail-price').textContent,'GHS 850,000');detail.dom.window.close();
  const gallery=await page('gallery.html',state);await wait(()=>gallery.doc.querySelectorAll('.gallery-card').length===6);assert(gallery.doc.querySelector('.gallery-card img').src.startsWith(prefix+'images/'));gallery.dom.window.close();
  const home=await page('index.html',state);assert.equal(home.doc.querySelectorAll('[data-faqs=featured] .faq-item').length,5);home.dom.window.close();
