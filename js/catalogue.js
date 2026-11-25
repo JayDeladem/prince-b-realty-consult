@@ -71,18 +71,36 @@ const composer = element('div', 'chat-composer');
 const input = element('input'); input.placeholder = 'Ask about a property…'; input.maxLength = 1200; input.required = true; input.setAttribute('aria-label','Your property question'); input.autocomplete = 'off';
 const send = iconButton('chat-send', 'Send message', '➤'); send.type = 'submit';
 composer.append(input, send); form.append(composer, element('p', 'chat-note', 'Here to help you find your place.'));
-panel.append(header, messages, form); document.body.append(launcher, panel);
+panel.append(header, messages, form);
+const welcome = element('div', 'chat-launcher-welcome'); welcome.hidden = true;
+const welcomeOpen = element('button', 'chat-welcome-open', 'Hi, I\u2019m PrinBot. Looking for a property? Let\u2019s chat.'); welcomeOpen.type = 'button';
+const welcomeClose = iconButton('chat-welcome-close', 'Dismiss welcome message', '\u00d7');
+welcome.append(welcomeOpen, welcomeClose); document.body.append(launcher, welcome, panel);
+// Show the launcher greeting once per browser, across site pages and return visits.
+try {
+    if (!localStorage.getItem('princeb-prinbot-welcomed')) {
+        welcome.hidden = false;
+        localStorage.setItem('princeb-prinbot-welcomed', '1');
+    }
+} catch (_) { welcome.hidden = false; }
+welcomeOpen.addEventListener('click', () => toggleChat(true));
+welcomeClose.addEventListener('click', () => { welcome.hidden = true; launcher.focus({preventScroll:true}); });
 function keepLatestVisible() { messages.scrollTop = messages.scrollHeight; }
 function syncViewport() {
     const viewport = window.visualViewport;
     panel.style.setProperty('--chat-viewport-height', `${viewport ? viewport.height : window.innerHeight}px`);
     panel.style.setProperty('--chat-viewport-top', `${viewport ? viewport.offsetTop : 0}px`);
+    const height = viewport ? viewport.height : window.innerHeight;
+    const panelHeight = Math.min(520, height * .72);
+    panel.style.setProperty('--chat-mobile-height', `${panelHeight}px`);
+    panel.style.setProperty('--chat-mobile-top', `${(viewport ? viewport.offsetTop : 0) + height - panelHeight - 16}px`);
     if (!panel.hidden) keepLatestVisible();
 }
 window.visualViewport?.addEventListener('resize', syncViewport);
 window.visualViewport?.addEventListener('scroll', syncViewport);
 window.addEventListener('resize', syncViewport);
 function toggleChat(open) {
+    if (open) welcome.hidden = true;
     panel.hidden = !open; launcher.setAttribute('aria-expanded', String(open));
     syncViewport(); (open ? input : launcher).focus({preventScroll:true});
 }
@@ -103,16 +121,10 @@ function addBotMessage(text) {
     return bubble;
 }
 addBotMessage('Hi, I’m PrinBot, your Prince B Realty property assistant. Tell me what you’re looking for, and I’ll help you explore your options.');
-const starters = element('div', 'chat-starters'); starters.setAttribute('aria-label', 'Suggested questions');
-['Show me houses for sale', 'Do you have land for sale?', 'Show me properties under GHS 900,000', 'How do I arrange a viewing?'].forEach(question => {
-    const button = element('button', 'chat-starter', question); button.type = 'button';
-    button.addEventListener('click', () => sendMessage(question)); starters.append(button);
-});
-messages.append(starters);
 let previousQuery = null, previousIds = [], busy = false;
 async function sendMessage(message, retryBubble = null) {
     message = message.trim(); if(!message || busy) return;
-    busy = true; send.disabled = true; form.setAttribute('aria-busy','true'); starters.hidden = true;
+    busy = true; send.disabled = true; form.setAttribute('aria-busy','true');
     // Keep the input available so closing and reopening while loading can always focus it.
     if(!retryBubble) { messages.append(element('p', 'chat-question', message)); input.value = ''; }
     const pending = retryBubble || addBotMessage(''); pending.replaceChildren(); pending.classList.add('chat-loading');
