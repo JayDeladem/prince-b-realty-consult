@@ -26,16 +26,12 @@
     toggle.setAttribute('aria-label', visible ? 'Hide password' : 'Show password'); toggle.setAttribute('aria-pressed', String(visible));
   });
   function destination() {
-    const next = new URLSearchParams(location.search).get('next'); if (!next) return '/admin';
-    try {
-      const target = new URL(next, location.origin);
-      return target.origin === location.origin && ['/admin','/admin/','/admin/properties','/admin/gallery','/admin/faqs','/admin/users','/admin/logs'].includes(target.pathname) ? target.pathname + target.search : '/admin';
-    } catch (_) { return '/admin'; }
+    return WCMAdmin.logicalRoute(new URLSearchParams(location.search).get('next') || '/admin');
   }
   let pending = false;
   async function initialize() {
     try {
-      const user = await api.session(); if (user) { WCMAdmin.redirect(destination(), true); return; }
+      const user = await api.session({verifyCookie:true}); if (user) { WCMAdmin.redirect(destination(), true); return; }
       button.disabled = false; button.textContent = 'Sign in';
       if (new URLSearchParams(location.search).has('expired')) notify('Your session has expired. Please sign in again.');
     } catch (error) { notify(error.message, true); button.textContent = 'Try connecting again'; button.disabled = false; }
@@ -44,11 +40,14 @@
     event.preventDefault(); if (pending) return;
     pending = true; button.disabled = true; button.textContent = 'Signing in…'; form.setAttribute('aria-busy', 'true'); notify('');
     try {
-      if (!api.token) await api.session();
+      if (!api.token) await api.session({verifyCookie:true});
       const data = await api.request('/auth/sign-in', { method: 'POST', body: JSON.stringify({ email: form.elements.email.value, password: password.value }) });
-      api.token = data.csrfToken; form.reset(); WCMAdmin.redirect(destination());
+      api.token = data.csrfToken;
+      const retained = await api.session();
+      if (!retained) throw new Error('Sign-in completed, but your browser did not retain the session cookie. Allow cross-site cookies for this site and try again.');
+      form.reset(); WCMAdmin.redirect(destination());
     } catch (error) {
-      notify(error.message, true); if (error.status === 403) { try { await api.session(); } catch (_) { api.token = ''; } }
+      notify(error.message, true); if (error.status === 403) { try { await api.session({verifyCookie:true}); } catch (_) { api.token = ''; } }
     } finally { pending = false; button.disabled = false; button.textContent = 'Sign in'; form.setAttribute('aria-busy', 'false'); }
   });
   await initialize();
