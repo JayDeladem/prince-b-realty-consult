@@ -13,8 +13,10 @@
     <link rel="icon" href="images/favi.ico" type="image/png">
 
     <!-- Link to the JavaScript file -->
+    <script src="js/config.js" defer></script>
     <script src="js/script.js" defer></script>
     <script src="js/catalogue.js" defer></script>
+    <script src="js/faqs.js" defer></script>
 </head>
 
 <body>
@@ -43,6 +45,7 @@
                 <li><a href="properties.html">Properties</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="faq.html">FAQs</a></li>
             </ul>
 
             <a class="btn btn-gold header-cta" href="contact.html">
@@ -190,12 +193,23 @@
                     Explore selected properties available around Ashaiman.
                 </p>
 
-                <div class="property-grid"><p role="status">Loading properties…</p>
+                <div class="property-grid" data-featured="true"><p role="status">Loading properties…</p>
                 </div>
 
             </div>
         </section>
 
+
+        <!-- Featured FAQs are selected by staff and retain API ordering. -->
+        <section class="section faq-preview" aria-labelledby="faq-preview-title">
+            <div class="container faq-container">
+                <p class="eyebrow">Here to help</p>
+                <h2 class="section-title" id="faq-preview-title">Frequently Asked <span class="gold">Questions</span></h2>
+                <p class="section-intro">Find answers to common questions about our property services.</p>
+                <div data-faqs="featured" aria-busy="true"><p class="faq-state" role="status">Loading frequently asked questions...</p></div>
+                <div class="cta-center"><a class="btn btn-gold" href="faq.html">View all FAQs</a></div>
+            </div>
+        </section>
 
         <!-- CONSULTATION BANNER -->
         <section class="consult-banner">
@@ -261,6 +275,7 @@
                     <a href="properties.html">Properties</a>
                     <a href="contact.html">Contact</a>
                     <a href="gallery.html">Gallery</a>
+                    <a href="faq.html">FAQs</a>
                 </div>
 
                 <p style="margin-top:16px;">
