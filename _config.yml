@@ -2,7 +2,6 @@
 # dependencies, migrations, tests or private runtime configuration.
 exclude:
   - backend-WCM
-  - admin
   - README.md
   - node_modules
   - package.json
