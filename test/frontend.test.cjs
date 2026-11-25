@@ -75,6 +75,15 @@ test('launcher welcomes first-time visitors, supports dismissal and stays quiet 
  assert.equal(p.w.localStorage.getItem('princeb-prinbot-welcomed'),'1');
  p.doc.querySelector('.chat-welcome-open').click();
  assert.equal(p.doc.querySelector('.property-chat').hidden,false);
+ assert.equal(p.doc.querySelectorAll('.chat-portraits img').length,3);
+ for(const image of p.doc.querySelectorAll('.chat-portraits img')){
+  assert.equal(image.alt,'');
+  assert(fs.existsSync(path.join(root,new URL(image.src).pathname.slice('/prince-b-realty-consult/'.length))));
+ }
+ const pause=p.doc.querySelector('.chat-slideshow-toggle');pause.click();
+ assert.equal(pause.getAttribute('aria-pressed'),'true');
+ assert(p.doc.querySelector('.chat-header').classList.contains('chat-slideshow-paused'));
+ pause.click();assert.equal(pause.getAttribute('aria-pressed'),'false');
  assert.equal(p.doc.querySelector('.chat-launcher-welcome').hidden,true);
  p.doc.querySelector('.chat-close').click();
  assert.equal(p.doc.querySelector('.property-chat').hidden,true);

@@ -58,13 +58,27 @@ launcher.setAttribute('aria-expanded', 'false'); launcher.setAttribute('aria-con
 const panel = element('section', 'property-chat'); panel.id = 'property-chat'; panel.hidden = true;
 panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-labelledby', 'prinbot-title');
 const header = element('div', 'chat-header');
-const portrait = element('img', 'chat-portrait'); portrait.src = 'images/prinbot-customer.png'; portrait.alt = ''; portrait.setAttribute('aria-hidden','true');
+const portraits = element('div', 'chat-portraits'); portraits.setAttribute('aria-hidden', 'true');
+['prinbot-customer.png', 'prinbot-customer-2.png', 'prinbot-customer-3.png'].forEach(filename => {
+    const portrait = element('img', 'chat-portrait'); portrait.src = 'images/' + filename;
+    portrait.alt = ''; portrait.decoding = 'async'; portraits.append(portrait);
+});
 const heading = element('div', 'chat-heading');
 heading.append(element('p', 'chat-eyebrow', 'PRINCE B REALTY CONSULT'));
 const title = element('h2', '', 'Chat with PrinBot'); title.id = 'prinbot-title';
 heading.append(title, element('p', 'chat-subtitle', "Prince 'B' assistant"));
 const close = iconButton('chat-close', 'Close PrinBot chat', '×');
-header.append(portrait, heading, close);
+const headerControls = element('div', 'chat-header-controls');
+const slideshowToggle = iconButton('chat-slideshow-toggle', 'Pause header slideshow', '\u2161');
+slideshowToggle.setAttribute('aria-pressed', 'false');
+slideshowToggle.addEventListener('click', () => {
+    const paused = header.classList.toggle('chat-slideshow-paused');
+    slideshowToggle.setAttribute('aria-pressed', String(paused));
+    slideshowToggle.setAttribute('aria-label', paused ? 'Resume header slideshow' : 'Pause header slideshow');
+    slideshowToggle.firstChild.textContent = paused ? '\u25b6' : '\u2161';
+});
+headerControls.append(slideshowToggle, close);
+header.append(portraits, heading, headerControls);
 const messages = element('div', 'chat-messages'); messages.setAttribute('role', 'log'); messages.setAttribute('aria-label', 'Conversation with PrinBot'); messages.setAttribute('aria-live', 'polite'); messages.setAttribute('aria-relevant', 'additions text');
 const form = element('form', 'chat-form');
 const composer = element('div', 'chat-composer');
