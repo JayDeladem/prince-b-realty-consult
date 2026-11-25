@@ -9,6 +9,7 @@
     <title>Property Details | Prince B Realty Consult</title>
     <link rel="icon" href="images/favi.ico" type="image/png">
     <link rel="stylesheet" href="css/style.css">
+    <script src="js/config.js" defer></script>
     <script src="js/script.js" defer></script>
     <script src="js/catalogue.js" defer></script>
 </head>
@@ -37,6 +38,7 @@
                 <li><a href="properties.html" class="active">Properties</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="faq.html">FAQs</a></li>
             </ul>
 
             <a class="btn btn-gold header-cta" href="contact.html">
@@ -67,7 +69,8 @@
                     &larr; Back to Available Properties
                 </a>
 
-                <div id="property-details-content">
+                <p id="property-loading" role="status">Loading property?</p>
+                <div id="property-details-content" hidden>
 
                     <!-- PROPERTY TITLE AND PRICE -->
                     <div class="property-detail-heading">
@@ -221,6 +224,7 @@
                     <a href="properties.html">Properties</a>
                     <a href="contact.html">Contact</a>
                     <a href="gallery.html">Gallery</a>
+                    <a href="faq.html">FAQs</a>
                 </div>
 
                 <p style="margin-top:16px">

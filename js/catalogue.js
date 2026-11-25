@@ -14,14 +14,16 @@ function listingLink(record) {
 catalogueReady.then(records => {
     document.querySelectorAll('.property-grid').forEach(grid => {
         grid.replaceChildren();
-        records.filter(p => p.status === 'active').forEach(p => {
+        const visible = records.filter(p => p.status === 'active' && (grid.dataset.featured !== 'true' || p.featured));
+        if (!visible.length) grid.append(element('p', '', 'No properties are currently published in this selection.'));
+        visible.forEach(p => {
             const card = element('article', 'property-card property-item');
             card.dataset.category = p.property_type;
             card.dataset.propertyId = p.id;
             const imageBox = element('div', 'property-image');
             const link = element('a');
-            link.href = 'property-details.html?id=' + encodeURIComponent(p.id);
-            const image = element('img'); image.src = p.images[0]; image.alt = p.title;
+            link.href = 'property-details.html?id=' + encodeURIComponent(p.slug);
+            const image = element('img'); image.src = p.images[0]; image.alt = p.image_alts?.[0] || p.title;
             link.append(image); imageBox.append(link, element('span', 'sale-tag', 'FOR SALE'));
             const info = element('div', 'property-info');
             info.append(element('h3', '', p.title), element('p', 'property-location', p.display_location), element('div', 'property-price', p.price));
@@ -125,7 +127,7 @@ async function sendMessage(message, retryBubble = null) {
         const data = await response.json();
         if(typeof data.reply !== 'string' || !Array.isArray(data.listings)) throw new Error('Invalid response');
         pending.textContent = data.reply;
-        if(data.demo) pending.append(element('p','chat-demo','Demo catalogue — please confirm details with our team.'));
+        if(data.demo === true && data.listings.length > 0) pending.append(element('p','chat-demo','Demo catalogue — please confirm details with our team.'));
         data.listings.forEach(p => {
             let href; try { href = listingLink(p); } catch (_) { return; }
             if(!href) return;

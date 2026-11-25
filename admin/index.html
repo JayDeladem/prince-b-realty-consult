@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Content Manager | Prince B Realty Consult</title><link rel="icon" type="image/png" href="/admin/assets/favicon.png">
+<link rel="stylesheet" href="/admin/admin.css">
+<script src="/admin/config.js" defer></script><script src="/admin/api.js" defer></script><script src="/admin/shared.js" defer></script><script src="/admin/editor.js" defer></script><script src="/admin/management.js" defer></script><script src="/admin/admin.js" defer></script>
+</head><body class="dashboard-page">
+<a class="skip-link" href="#main">Skip to content</a><div class="sidebar-backdrop" hidden></div>
+<aside class="sidebar" id="sidebar" aria-label="Staff navigation">
+<a href="/admin" class="sidebar-logo" data-nav><img src="/admin/assets/logo.png" alt="Prince B Realty Consult"></a><p class="sidebar-label">WEBSITE MANAGER</p>
+<button type="button" id="close-menu" class="sidebar-close">Close menu</button>
+<nav aria-label="Dashboard"><a data-nav href="/admin"><span aria-hidden="true">▦</span>Overview</a><a data-nav href="/admin/properties"><span aria-hidden="true">⌂</span>Properties</a><a data-nav href="/admin/gallery"><span aria-hidden="true">▧</span>Gallery</a><a data-nav href="/admin/faqs"><span aria-hidden="true">?</span>FAQs</a></nav>
+<nav aria-label="System management" id="super-admin-nav" hidden><p class="sidebar-label">ADMINISTRATION</p><a data-nav href="/admin/users"><span aria-hidden="true">♙</span>Users</a><a data-nav href="/admin/logs"><span aria-hidden="true">≡</span>System logs</a></nav>
+<div class="sidebar-bottom"><a class="website-link" target="_blank" rel="noopener" href="https://jaydeladem.github.io/prince-b-realty-consult/">View website</a><button id="sign-out" type="button">Sign out</button><small>Prince B Realty Consult</small></div>
+</aside>
+<div class="dashboard-shell"><header class="topbar"><button id="menu-toggle" type="button" aria-controls="sidebar" aria-expanded="false">Menu</button><p>Staff workspace</p><span id="staff-email"></span></header>
+<main id="main" tabindex="-1"><p id="feedback" class="feedback" role="status" aria-live="polite" hidden></p>
+<div id="view" aria-busy="true"><p class="state">Loading your workspace…</p></div>
+<section id="editor" class="editor" aria-labelledby="editor-title" hidden>
+<div class="page-heading"><div><p class="eyebrow">CONTENT EDITOR</p><h1 id="editor-title">Edit content</h1></div><button id="cancel" type="button" class="button secondary">Back to list</button></div>
+<form id="content-form" novalidate><p id="form-error" class="feedback error" role="alert" hidden></p>
+<div class="editor-layout"><div id="field-groups"></div><aside class="editor-side"><div class="preview-card"><p class="eyebrow">IMAGE PREVIEW</p><img id="image-preview" alt="Image preview" hidden><p id="preview-note" class="muted">Enter an HTTPS image URL to preview it here.</p></div><div class="editor-publication"><h2>Publication</h2><div id="editor-status"></div><p class="muted">Drafts are private. Published changes appear on the website after refresh.</p></div></aside></div>
+<div class="editor-footer"><div id="save-actions" class="actions"></div><button id="delete-item" type="button" class="button danger" hidden>Delete item</button></div>
+</form></section></main><footer class="workspace-footer">Your website, thoughtfully maintained.</footer></div>
+</body></html>

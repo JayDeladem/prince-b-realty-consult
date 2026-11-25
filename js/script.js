@@ -322,23 +322,24 @@ if (galleryImages.length > 0) {
 
 // Store property information in one place
 async function loadCatalogue() {
-    const response = await fetch('./listings.json', {cache: 'no-cache'});
-    if (!response.ok) throw new Error('Catalogue unavailable');
-    const listings = await response.json();
+    if (!document.querySelector('.property-grid')) return [];
+    const listings = await WCM.get('/properties');
     if (!Array.isArray(listings)) throw new Error('Invalid catalogue');
     return listings;
 }
 const catalogueReady = loadCatalogue();
 catalogueReady.catch(() => {});
 async function displayPropertyDetails() {
-const properties = Object.fromEntries((await catalogueReady).map(item => [item.id, item]));
+
 // Get the property ID from the page URL
 const urlParameters = new URLSearchParams(window.location.search);
 
 const propertyId = urlParameters.get("id");
 
 // Find the selected property
-const selectedProperty = properties[propertyId];
+if (!document.querySelector('#property-details-content')) return;
+const selectedProperty = propertyId ? await WCM.get('/properties/' + encodeURIComponent(propertyId)) : null;
+document.querySelector('#property-loading').hidden = true;
 
 // Get the property details page elements
 const detailsContent = document.querySelector("#property-details-content");
@@ -351,6 +352,7 @@ if (detailsContent && notFoundMessage) {
 
     // Check whether the selected property exists
     if (selectedProperty) {
+        detailsContent.hidden = false;
         document.querySelectorAll(".property-status").forEach(el => { el.textContent = selectedProperty.status === "active" ? "FOR SALE" : "Unavailable"; });
 
         // Display the property title
@@ -363,7 +365,7 @@ if (detailsContent && notFoundMessage) {
 
         // Display the property location
         document.querySelector("#detail-location").textContent =
-            selectedProperty.location;
+            selectedProperty.display_location;
 
         // Display the property description
         document.querySelector("#detail-description").textContent =
@@ -375,7 +377,7 @@ if (detailsContent && notFoundMessage) {
 
         mainImage.src = selectedProperty.images[0];
 
-        mainImage.alt = selectedProperty.title;
+        mainImage.alt = selectedProperty.image_alts?.[0] || selectedProperty.title;
 
 
         // Display the additional property images
@@ -389,7 +391,7 @@ if (detailsContent && notFoundMessage) {
 
             thumbnail.src = image;
 
-            thumbnail.alt = selectedProperty.title + " image " + (index + 1);
+            thumbnail.alt = selectedProperty.image_alts?.[index] || selectedProperty.title + " image " + (index + 1);
 
             thumbnail.classList.add("property-thumbnail");
 
@@ -470,5 +472,6 @@ if (detailsContent && notFoundMessage) {
 displayPropertyDetails().catch(() => {
  const content = document.querySelector("#property-details-content");
  const error = document.querySelector("#property-not-found");
- if(content && error) { content.hidden=true; error.hidden=false; error.querySelector("p").textContent="The catalogue is temporarily unavailable. Please try again or contact us."; }
+ const loading = document.querySelector('#property-loading'); if(loading) loading.hidden=true;
+ if(content && error) { error.querySelector('h2').textContent='Property temporarily unavailable'; content.hidden=true; error.hidden=false; error.querySelector("p").textContent="The catalogue is temporarily unavailable. Please try again or contact us."; }
 });
