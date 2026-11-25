@@ -48,7 +48,7 @@ if (menuToggle && navLinks) {
 
 const categoryButtons = document.querySelectorAll(".category-btn");
 const propertySearch = document.querySelector("#property-search");
-const propertyCards = document.querySelectorAll(".property-item");
+let propertyCards = [];
 const noProperties = document.querySelector("#no-properties");
 
 // Store the currently selected category
@@ -321,109 +321,17 @@ if (galleryImages.length > 0) {
 ========================================= */
 
 // Store property information in one place
-const properties = {
-
-    "house-1": {
-
-        title: "Modern 3-Bedroom House",
-
-        price: "GHS 850,000",
-
-        location: "East Legon, Accra, Ghana",
-
-        description:
-            "A beautiful modern three-bedroom house with spacious rooms, a fitted kitchen and quality finishing. It offers a comfortable living environment and convenient access to essential facilities.",
-
-        features: [
-            "3 Bedrooms",
-            "3 Bathrooms",
-            "Spacious living room",
-            "Fitted kitchen",
-            "Parking space"
-        ],
-
-        images: [
-            "images/hse2.avif",
-
-            "images/bed4.avif",
-
-            "images/bed2.avif",
-
-            "images/bed1.webp"
-        ]
-
-    },
-
-
-    "apartment-1": {
-
-        title: "2-Bedroom Apartment",
-
-        price: "GHS 420,000",
-
-        location: "Spintex, Accra, Ghana",
-
-        description:
-            "A comfortable two-bedroom apartment with a modern interior, spacious living area and convenient access to nearby amenities. Suitable for individuals and families.",
-
-        features: [
-            "2 Bedrooms",
-            "2 Bathrooms",
-            "Spacious living area",
-            "Modern kitchen",
-            "Secure parking"
-        ],
-
-        images: [
-            "images/a5.jpeg",
-
-            "images/a8.jpeg",
-
-            "images/a7.jpeg",
-
-            "images/a6.jpeg"
-        ]
-
-    },
-
-
-    "land-1": {
-
-        title: "Residential Plot of Land",
-
-        price: "GHS 120,000",
-
-        location: "Oyibi, Accra, Ghana",
-
-        description:
-            "A residential plot suitable for individuals interested in building a private home or investing in land. Interested buyers should contact Prince B Consult for further information and property documentation.",
-
-        features: [
-            "Residential land",
-            "Suitable for building",
-            "Location: Oyibi",
-            "Contact us for land size",
-            "Contact us for documentation details"
-        ],
-
-        images: [
-            "images/property-12.jpg",
-
-            "images/land.avif",
-
-            "images/property-24.jpg"
-
-        ]
-
-    }
-
-};
-
-
-/* =========================================
-   7. DISPLAY PROPERTY DETAILS
-========================================= */
-
+async function loadCatalogue() {
+    const response = await fetch('./listings.json', {cache: 'no-cache'});
+    if (!response.ok) throw new Error('Catalogue unavailable');
+    const listings = await response.json();
+    if (!Array.isArray(listings)) throw new Error('Invalid catalogue');
+    return listings;
+}
+const catalogueReady = loadCatalogue();
+catalogueReady.catch(() => {});
+async function displayPropertyDetails() {
+const properties = Object.fromEntries((await catalogueReady).map(item => [item.id, item]));
 // Get the property ID from the page URL
 const urlParameters = new URLSearchParams(window.location.search);
 
@@ -443,6 +351,7 @@ if (detailsContent && notFoundMessage) {
 
     // Check whether the selected property exists
     if (selectedProperty) {
+        document.querySelectorAll(".property-status").forEach(el => { el.textContent = selectedProperty.status === "active" ? "FOR SALE" : "Unavailable"; });
 
         // Display the property title
         document.querySelector("#detail-title").textContent =
@@ -556,3 +465,10 @@ if (detailsContent && notFoundMessage) {
 
 }
 
+
+}
+displayPropertyDetails().catch(() => {
+ const content = document.querySelector("#property-details-content");
+ const error = document.querySelector("#property-not-found");
+ if(content && error) { content.hidden=true; error.hidden=false; error.querySelector("p").textContent="The catalogue is temporarily unavailable. Please try again or contact us."; }
+});
