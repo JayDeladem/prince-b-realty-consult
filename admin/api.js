@@ -1,12 +1,12 @@
-// Same-origin staff API shared by sign-in, dashboard and editors.
+// Cross-origin cookie session API. CSRF tokens stay in memory, never localStorage.
 window.WCMAdmin = window.WCMAdmin || {};
 WCMAdmin.api = {
   token: '', expired: null,
   async request(path, options = {}) {
     let response;
     try {
-      response = await fetch('/api/v1' + path, {
-        ...options, credentials: 'same-origin', signal: AbortSignal.timeout(15000),
+      response = await fetch(WCMAdmin.apiBaseUrl.replace(/\/$/, '') + path, {
+        ...options, credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(15000),
         headers: { ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), 'X-CSRF-Token': this.token, ...options.headers },
       });
     } catch (_) { throw new Error('We couldn’t connect. Check your connection and try again.'); }
@@ -19,5 +19,16 @@ WCMAdmin.api = {
     }
     return data;
   },
-  async session() { const data = await this.request('/auth/session'); this.token = data.csrfToken; return data.user; },
+  async session({ verifyCookie = false } = {}) {
+    const data = await this.request('/auth/session'); this.token = data.csrfToken;
+    if (verifyCookie && !data.user) {
+      const repeated = await this.request('/auth/session');
+      if (repeated.csrfToken !== data.csrfToken) {
+        this.token = '';
+        throw Object.assign(new Error('Your browser is blocking the sign-in session cookie. Allow cross-site cookies for this site or use a browser that supports partitioned cookies, then try again.'), { code: 'COOKIE_BLOCKED' });
+      }
+      this.token = repeated.csrfToken;
+    }
+    return data.user;
+  },
 };

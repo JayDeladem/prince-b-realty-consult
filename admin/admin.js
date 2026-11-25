@@ -7,7 +7,7 @@
   function expired() {
     view.replaceChildren(el('p','Your session has expired. Returning to sign in…','state'));
     document.querySelector('#editor').hidden=true;
-    WCMAdmin.redirect('/admin/login?expired=1&next='+encodeURIComponent(location.pathname+location.search),true);
+    WCMAdmin.redirect('/admin/login?expired=1&next='+encodeURIComponent(WCMAdmin.logicalRoute()),true);
   }
   api.expired=expired;
   function syncNavigation() {
@@ -36,7 +36,7 @@
       else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
     }
   });
-  function navLink(label,path,className='button') { const link=el('a',label,className);link.href=path;link.dataset.nav='';return link; }
+  function navLink(label,path,className='button') { const link=el('a',label,className);link.href=WCMAdmin.href(path);link.dataset.nav='';return link; }
   document.addEventListener('click',event=>{
     const link=event.target.closest('a[data-nav]');if(!link||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button>0)return;
     event.preventDefault();if(!WCMAdmin.busy)go(link.pathname+link.search);
@@ -44,7 +44,7 @@
   window.addEventListener('popstate',()=>{if(!WCMAdmin.busy)render();});
   async function go(path,replace=false){
     if(WCMAdmin.busy)return;
-    history[replace?'replaceState':'pushState']({},'',path);notify('');menu(false);await render();
+    history[replace?'replaceState':'pushState']({},'',WCMAdmin.href(path));notify('');menu(false);await render();
     if(document.querySelector('#editor').hidden)document.querySelector('#main').focus({preventScroll:true});
   }
   WCMAdmin.go=go;
@@ -119,9 +119,9 @@
   }
   async function render() {
     const version=++renderVersion;document.querySelector('#editor').hidden=true;view.hidden=false;view.setAttribute('aria-busy','true');view.replaceChildren(el('p','Loading content…','state'));
-    const path=location.pathname.replace(/\/$/,'');moduleName=path==='/admin/properties'?'properties':path==='/admin/gallery'?'gallery':path==='/admin/faqs'?'faqs':null;
+    const path=new URL(WCMAdmin.logicalRoute(),location.origin).pathname;moduleName=path==='/admin/properties'?'properties':path==='/admin/gallery'?'gallery':path==='/admin/faqs'?'faqs':null;
     const managementPage=path==='/admin/users'?'users':path==='/admin/logs'?'logs':null;
-    document.querySelectorAll('.sidebar nav a').forEach(link=>{if(link.pathname===path)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
+    document.querySelectorAll('.sidebar nav a').forEach(link=>{if(new URL(WCMAdmin.logicalRoute(link.href),location.origin).pathname===path)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
     document.title=(managementPage?managementPage==='users'?'Users':'System logs':moduleName?moduleName==='properties'?'Properties':moduleName==='faqs'?'FAQs':'Gallery':'Overview')+' | Prince B Content Manager';
     try {
       if(managementPage){
@@ -133,7 +133,7 @@
     finally{if(version===renderVersion)view.setAttribute('aria-busy','false');}
   }
   try {
-    const user=await api.session();if(!user){WCMAdmin.redirect('/admin/login?next='+encodeURIComponent(location.pathname+location.search),true);return;}
+    const user=await api.session();if(!user){WCMAdmin.redirect('/admin/login?next='+encodeURIComponent(WCMAdmin.logicalRoute()),true);return;}
     WCMAdmin.user=user;
     document.querySelector('#staff-email').textContent=user.email+' · '+(user.role==='super_admin'?'Super admin':'Admin');
     document.querySelector('#super-admin-nav').hidden=user.role!=='super_admin';await render();

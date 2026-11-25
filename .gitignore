@@ -1,0 +1,7 @@
+# Local remnants of the retired in-repository backend are intentionally retained.
+/backend-WCM/
+node_modules/
+.env
+.env.*
+!.env.example
+*.pem

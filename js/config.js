@@ -1,9 +1,7 @@
-/* Public configuration only. Set apiBaseUrl to the separately hosted WCM HTTPS URL
-   (including /api/v1) before deploying. No keys or staff credentials belong here. */
+/* Shared public/admin API configuration. Includes /api/v1 exactly once.
+   No keys, database URLs or staff credentials belong in frontend code. */
 window.WCM = {
-    apiBaseUrl: ['localhost', '127.0.0.1'].includes(location.hostname)
-        ? 'http://127.0.0.1:3000/api/v1'
-        : '', // e.g. https://YOUR-WCM-SERVICE.onrender.com/api/v1
+    apiBaseUrl: 'https://prince-b-wcm-backend.onrender.com/api/v1',
     async get(path) {
         if (!this.apiBaseUrl) throw new Error('The content API has not been configured.');
         const base = new URL(this.apiBaseUrl);

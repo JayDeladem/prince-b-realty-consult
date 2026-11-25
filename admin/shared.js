@@ -1,6 +1,6 @@
 window.WCMAdmin = window.WCMAdmin || {};
 Object.assign(WCMAdmin, {
-  redirect(path, replace = false) { location[replace ? 'replace' : 'assign'](path); },
+  redirect(path, replace = false) { location[replace ? 'replace' : 'assign'](WCMAdmin.href(path)); },
   el(tag, text, className) {
     const node = document.createElement(tag); if (text != null) node.textContent = text; if (className) node.className = className; return node;
   },

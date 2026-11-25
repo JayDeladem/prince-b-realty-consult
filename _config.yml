@@ -1,8 +1,8 @@
-# GitHub Pages uses only static frontend files. Never publish server source,
-# dependencies, migrations, tests or private runtime configuration.
+# Publish the public website and admin/ as static GitHub Pages assets.
 exclude:
-  - backend-WCM
   - README.md
   - node_modules
   - package.json
   - package-lock.json
+  - test
+  - tools

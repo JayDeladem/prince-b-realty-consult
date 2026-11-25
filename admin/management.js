@@ -1,7 +1,7 @@
 ﻿// Super-admin user management and read-only audit log views.
 (function(){
   const {api,el,date,notify}=WCMAdmin;
-  function link(text,path,className='text-link'){const a=el('a',text,className);a.href=path;a.dataset.nav='';return a;}
+  function link(text,path,className='text-link'){const a=el('a',text,className);a.href=WCMAdmin.href(path);a.dataset.nav='';return a;}
   function heading(title,description){const h=el('div',null,'page-heading'),text=el('div');text.append(el('p','ADMINISTRATION','eyebrow'),el('h1',title),el('p',description,'muted'));h.append(text);return h;}
   function roleLabel(role){return role==='super_admin'?'Super admin':'Admin';}
   function table(headers){const wrap=el('div',null,'table-scroll'),node=el('table'),head=el('thead'),tr=el('tr'),body=el('tbody');headers.forEach(title=>{const th=el('th',title);th.scope='col';tr.append(th);});head.append(tr);node.append(head,body);wrap.append(node);return {wrap,body};}
